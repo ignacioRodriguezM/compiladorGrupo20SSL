@@ -1,11 +1,11 @@
 %{
-int yylex();
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "tablaDeSimbolos.h" // Todas las funciones de la TS
 
+int yylex();
 void yyerror(char *s);
 
 extern int yynerrs;
@@ -86,6 +86,11 @@ int main(int argc, char** argv) {
         printf("Numero incorrecto de argumentos.");
         return EXIT_FAILURE;
     }
+    else if ( argc == 1 )
+   {
+      printf("Debe ingresar el nombre del archivo fuente (en lenguaje Micro) en la linea de comandos\n");
+      return -1;
+   }
     else if (argc == 2) {
         char filename[50];                  // Nombre del archivo
         sprintf(filename, "%s", argv[1]);   // El 2do argumento
