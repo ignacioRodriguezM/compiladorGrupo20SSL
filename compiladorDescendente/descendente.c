@@ -45,6 +45,7 @@ void ListaExpresiones(void);
 void Expresion(REG_EXPRESION * presul);
 void Primaria(REG_EXPRESION * presul);
 void OperadorAditivo(char * presul);
+void Termino(REG_EXPRESION * presul);
 
 REG_EXPRESION ProcesarCte(void);
 REG_EXPRESION ProcesarId(void);
