@@ -1,4 +1,4 @@
-/* Compilador del Lenguaje Micro (Fischer)	*/
+/* Compilador del Lenguaje Micro (Fischer)	,*/
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
