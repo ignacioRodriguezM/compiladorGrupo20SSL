@@ -66,7 +66,7 @@ void Comenzar(void);
 void Terminar(void);
 void Asignar(REG_EXPRESION izq, REG_EXPRESION der);
 
-/Programa Principal*/
+/*Programa Principal*/
 
 int main(int argc, char * argv[])
 {
@@ -74,7 +74,7 @@ int main(int argc, char * argv[])
  char nomArchi[TAMNOM];
  int l;
 
-/Se abre el Archivo Fuente*/
+/*Se abre el Archivo Fuente*/
  if ( argc == 1 )
  {
   printf("Debe ingresar el nombre del archivo fuente (en lenguaje Micro) en la linea de comandos\n");
@@ -104,7 +104,7 @@ int main(int argc, char * argv[])
   return -1;
  }
 
-/Inicio Compilacion/
+/*Inicio Compilacion*/
 
  Objetivo();
 
@@ -382,7 +382,7 @@ REG_EXPRESION GenInfijo(REG_EXPRESION e1, char * op, REG_EXPRESION e2)
 
  return reg;
 }
-/Funciones Auxiliares*/
+/*Funciones Auxiliares*/
 
 void Match(TOKEN t)
 {
@@ -594,4 +594,4 @@ int columna(int c)
  if ( c == '*' ) return 13;
  return 12;
 }
-/Fin Scanner*/
+/*Fin Scanner*/
