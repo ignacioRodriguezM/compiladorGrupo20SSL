@@ -3,15 +3,15 @@
 #include <string.h>
 #include <ctype.h>
 
-#define NUMESTADOS 15
-#define NUMCOLS 13
+#define NUMESTADOS 16
+#define NUMCOLS 14
 #define TAMLEX 32+1
 #define TAMNOM 20+1
-/******************Declaraciones Globales*************************/
+/*Declaraciones Globales/
 FILE * in;
 typedef enum
 {
- INICIO, FIN, LEER, ESCRIBIR, ID, CONSTANTE, PARENIZQUIERDO, PARENDERECHO, PUNTOYCOMA, COMA, ASIGNACION, SUMA, RESTA, FDT, ERRORLEXICO
+ INICIO, FIN, LEER, ESCRIBIR, ID, CONSTANTE, PARENIZQUIERDO, PARENDERECHO, PUNTOYCOMA, COMA, ASIGNACION, SUMA, RESTA, MULTIPLICACION, FDT, ERRORLEXICO
 } TOKEN;
 typedef struct
 {
@@ -31,7 +31,7 @@ char buffer[TAMLEX];
 TOKEN tokenActual;
 int flagToken = 0;
 
-/**********************Prototipos de Funciones************************/
+/*Prototipos de Funciones*/
 TOKEN scanner();
 int columna(int c);
 int estadoFinal(int e);
@@ -66,7 +66,7 @@ void Comenzar(void);
 void Terminar(void);
 void Asignar(REG_EXPRESION izq, REG_EXPRESION der);
 
-/***************************Programa Principal************************/
+/Programa Principal*/
 
 int main(int argc, char * argv[])
 {
@@ -74,7 +74,7 @@ int main(int argc, char * argv[])
  char nomArchi[TAMNOM];
  int l;
 
-/***************************Se abre el Archivo Fuente******************/
+/Se abre el Archivo Fuente*/
  if ( argc == 1 )
  {
   printf("Debe ingresar el nombre del archivo fuente (en lenguaje Micro) en la linea de comandos\n");
@@ -104,18 +104,18 @@ int main(int argc, char * argv[])
   return -1;
  }
 
-/*************************Inicio Compilacion***************************/
+/Inicio Compilacion/
 
  Objetivo();
 
-/**************************Se cierra el Archivo Fuente******************/
+/*Se cierra el Archivo Fuente*/
 
  fclose(in);
   
  return 0;
 }
 
-/**********Procedimientos de Analisis Sintactico (PAS) *****************/
+/**Procedimientos de Analisis Sintactico (PAS) *****************/
 
 void Objetivo(void)
 {
@@ -233,7 +233,26 @@ void ListaExpresiones(void)
 
 void Expresion(REG_EXPRESION * presul)
 {
- /* <expresion> -> <primaria> { <operadorAditivo> <primaria> #gen_infijo } */
+ /* <expresion> -> <termino> { (SUMA | RESTA) <termino> #gen_infijo } */
+
+ REG_EXPRESION operandoIzq, operandoDer;
+ char op[TAMLEX];
+ TOKEN t;
+
+ Termino(&operandoIzq);
+
+ for ( t = ProximoToken(); t == SUMA || t == RESTA; t = ProximoToken() )
+ {
+    OperadorAditivo(op);
+    Termino(&operandoDer);
+    operandoIzq = GenInfijo(operandoIzq, op, operandoDer);
+ }
+ *presul = operandoIzq;
+}
+
+void Termino(REG_EXPRESION * presul)
+{
+ /* <termino> -> <primaria> { MULTIPLICACION <primaria> #gen_infijo } */
 
  REG_EXPRESION operandoIzq, operandoDer;
  char op[TAMLEX];
@@ -241,11 +260,11 @@ void Expresion(REG_EXPRESION * presul)
 
  Primaria(&operandoIzq);
 
- for ( t = ProximoToken(); t == SUMA || t == RESTA; t = ProximoToken() )
+ for ( t = ProximoToken(); t == MULTIPLICACION; t = ProximoToken() )
  {
-  OperadorAditivo(op);
-  Primaria(&operandoDer);
-  operandoIzq = GenInfijo(operandoIzq, op, operandoDer);
+    OperadorAditivo(op);
+    Primaria(&operandoDer);
+    operandoIzq = GenInfijo(operandoIzq, op, operandoDer);
  }
  *presul = operandoIzq;
 }
@@ -274,11 +293,11 @@ void Primaria(REG_EXPRESION * presul)
 
 void OperadorAditivo(char * presul)
 {
- /* <operadorAditivo> -> SUMA #procesar_op | RESTA #procesar_op */
+ /* <operadorAditivo> -> SUMA #procesar_op | RESTA #procesar_op | MULTIPLICACION #procesar_op */
 
  TOKEN t = ProximoToken();
 
- if ( t == SUMA || t == RESTA )
+ if ( t == SUMA || t == RESTA || t == MULTIPLICACION )
  {
   Match(t);
   strcpy(presul, ProcesarOp());
@@ -287,7 +306,7 @@ void OperadorAditivo(char * presul)
   ErrorSintactico(t);
 }
 
-/**********************Rutinas Semanticas******************************/
+/*Rutinas Semanticas*/
 
 REG_EXPRESION ProcesarCte(void)
 {
@@ -348,6 +367,7 @@ REG_EXPRESION GenInfijo(REG_EXPRESION e1, char * op, REG_EXPRESION e2)
 
  if ( op[0] == '-' ) strcpy(cadOp, "Restar");
  if ( op[0] == '+' ) strcpy(cadOp, "Sumar");
+ if ( strcmp(op, "*") == 0 ) strcpy(cadOp, "Multiplicar");
 
  sprintf(cadNum, "%d", numTemp);
  numTemp++;
@@ -362,7 +382,7 @@ REG_EXPRESION GenInfijo(REG_EXPRESION e1, char * op, REG_EXPRESION e2)
 
  return reg;
 }
-/***************Funciones Auxiliares**********************************/
+/Funciones Auxiliares*/
 
 void Match(TOKEN t)
 {
@@ -483,25 +503,26 @@ void Asignar(REG_EXPRESION izq, REG_EXPRESION der)
  Generar("Almacena", Extraer(&der), izq.nombre, "");
 }
 
-/**************************Scanner************************************/
+/*Scanner*/
 
 TOKEN scanner()
 {
- int tabla[NUMESTADOS][NUMCOLS] = { {  1,  3,  5,  6,  7,  8,  9, 10, 11, 14, 13,  0, 14 },
- 				    {  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2 },
- 				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    {  4,  3,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 12, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
-				    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 } };
+ int tabla[NUMESTADOS][NUMCOLS] = { {  1,  3,  5,  6,  7,  8,  9, 10, 11, 14, 13,  0, 14, 15 },
+                     {  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2 },
+                     { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    {  4,  3,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 12, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
+                    { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 } };
  int car;
  int col;
  int estado = 0;
@@ -547,6 +568,7 @@ TOKEN scanner()
   case 12 : return ASIGNACION;
   case 13 : return FDT;
   case 14 : return ERRORLEXICO;
+  case 15 : return MULTIPLICACION;
  }
  return 0;
 }
@@ -569,6 +591,7 @@ int columna(int c)
  if ( c == '=' ) return 9;
  if ( c == EOF ) return 10;
  if ( isspace(c) ) return 11;
+ if ( c == '*' ) return 13;
  return 12;
 }
-/*************Fin Scanner**********************************************/
+/Fin Scanner*/
